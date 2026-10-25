@@ -1,0 +1,26 @@
+{
+  "name": "game-difficulty-auto-balancing",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\" \"npm run dev:ml\"",
+    "dev:api": "npm run dev --workspace=@game-ai/api",
+    "dev:web": "npm run dev --workspace=@game-ai/web",
+    "dev:ml": "python services/ml-service/app/main.py",
+    "build": "npm run build --workspace=@game-ai/shared-types && npm run build --workspace=@game-ai/api && npm run build --workspace=@game-ai/web",
+    "test": "npm run test --workspaces --if-present",
+    "test:ml": "python -m unittest discover -s ml/tests -p \"test_*.py\"",
+    "ml:generate-data": "python ml/datasets/generate_dataset.py",
+    "ml:train": "python ml/training/train_models.py",
+    "ml:evaluate": "python ml/evaluation/evaluate_models.py",
+    "db:migrate": "npm run db:migrate --workspace=@game-ai/api",
+    "db:seed": "npm run db:seed --workspace=@game-ai/api"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

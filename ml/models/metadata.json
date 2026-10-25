@@ -1,0 +1,233 @@
+{
+  "active_model_key": "gradient_boosting",
+  "champion_model_name": "Gradient Boosting Classifier",
+  "feature_schema_version": "v1.0-14feat",
+  "feature_columns": [
+    "current_difficulty",
+    "accuracy",
+    "win_rate",
+    "death_rate",
+    "survival_rate",
+    "average_score",
+    "reaction_time",
+    "completion_time",
+    "performance_trend",
+    "consecutive_wins",
+    "consecutive_losses",
+    "recent_accuracy",
+    "recent_win_rate",
+    "recent_score"
+  ],
+  "classes": [
+    -1,
+    0,
+    1
+  ],
+  "class_labels": [
+    "decrease",
+    "maintain",
+    "increase"
+  ],
+  "class_distribution": {
+    "decrease": 0.2528,
+    "maintain": 0.429,
+    "increase": 0.3182
+  },
+  "models": {
+    "rule_based": {
+      "model_key": "rule_based",
+      "model_name": "Rule-based Baseline",
+      "version": "rule-1.0.0",
+      "algorithm": "RuleBasedClassifier",
+      "dataset_version": "v1.0-12k",
+      "feature_schema_version": "v1.0-14feat",
+      "dataset_size": 12000,
+      "train_samples": 8399,
+      "val_samples": 1801,
+      "test_samples": 1800,
+      "cv_accuracy_mean": 0.7689,
+      "cv_accuracy_std": 0.005,
+      "cv_f1_mean": 0.7667,
+      "cv_f1_std": 0.005,
+      "accuracy": 0.7689,
+      "precision": 0.7711,
+      "recall": 0.7689,
+      "f1_score": 0.7667,
+      "confusion_matrix": [
+        [
+          393,
+          39,
+          23
+        ],
+        [
+          77,
+          621,
+          74
+        ],
+        [
+          16,
+          187,
+          370
+        ]
+      ],
+      "feature_importance": {},
+      "trained_at": "2026-09-24T18:16:09.777867+00:00",
+      "model_path": "ml/models\\rule_based_model.joblib",
+      "is_champion": false
+    },
+    "logistic_regression": {
+      "model_key": "logistic_regression",
+      "model_name": "Logistic Regression",
+      "version": "lr-1.0.0",
+      "algorithm": "LogisticRegression",
+      "dataset_version": "v1.0-12k",
+      "feature_schema_version": "v1.0-14feat",
+      "dataset_size": 12000,
+      "train_samples": 8399,
+      "val_samples": 1801,
+      "test_samples": 1800,
+      "cv_accuracy_mean": 0.9732,
+      "cv_accuracy_std": 0.003,
+      "cv_f1_mean": 0.9732,
+      "cv_f1_std": 0.003,
+      "accuracy": 0.9628,
+      "precision": 0.9628,
+      "recall": 0.9628,
+      "f1_score": 0.9628,
+      "confusion_matrix": [
+        [
+          440,
+          15,
+          0
+        ],
+        [
+          15,
+          740,
+          17
+        ],
+        [
+          0,
+          20,
+          553
+        ]
+      ],
+      "feature_importance": {},
+      "trained_at": "2026-09-24T18:16:10.356749+00:00",
+      "model_path": "ml/models\\logistic_regression_model.joblib",
+      "is_champion": false
+    },
+    "random_forest": {
+      "model_key": "random_forest",
+      "model_name": "Random Forest Classifier",
+      "version": "rf-1.0.0",
+      "algorithm": "RandomForestClassifier",
+      "dataset_version": "v1.0-12k",
+      "feature_schema_version": "v1.0-14feat",
+      "dataset_size": 12000,
+      "train_samples": 8399,
+      "val_samples": 1801,
+      "test_samples": 1800,
+      "cv_accuracy_mean": 0.9706,
+      "cv_accuracy_std": 0.0047,
+      "cv_f1_mean": 0.9707,
+      "cv_f1_std": 0.0047,
+      "accuracy": 0.9689,
+      "precision": 0.9694,
+      "recall": 0.9689,
+      "f1_score": 0.9689,
+      "confusion_matrix": [
+        [
+          442,
+          13,
+          0
+        ],
+        [
+          8,
+          757,
+          7
+        ],
+        [
+          0,
+          28,
+          545
+        ]
+      ],
+      "feature_importance": {
+        "recent_win_rate": 0.1789,
+        "consecutive_losses": 0.1704,
+        "accuracy": 0.1251,
+        "recent_accuracy": 0.1175,
+        "consecutive_wins": 0.0991,
+        "win_rate": 0.0762,
+        "survival_rate": 0.0546,
+        "death_rate": 0.0477,
+        "reaction_time": 0.0398,
+        "current_difficulty": 0.0344,
+        "completion_time": 0.0185,
+        "average_score": 0.0158,
+        "recent_score": 0.0152,
+        "performance_trend": 0.0068
+      },
+      "trained_at": "2026-09-24T18:16:15.300931+00:00",
+      "model_path": "ml/models\\random_forest_model.joblib",
+      "is_champion": false
+    },
+    "gradient_boosting": {
+      "model_key": "gradient_boosting",
+      "model_name": "Gradient Boosting Classifier",
+      "version": "gb-1.0.0",
+      "algorithm": "GradientBoostingClassifier",
+      "dataset_version": "v1.0-12k",
+      "feature_schema_version": "v1.0-14feat",
+      "dataset_size": 12000,
+      "train_samples": 8399,
+      "val_samples": 1801,
+      "test_samples": 1800,
+      "cv_accuracy_mean": 0.9819,
+      "cv_accuracy_std": 0.0027,
+      "cv_f1_mean": 0.9819,
+      "cv_f1_std": 0.0027,
+      "accuracy": 0.9833,
+      "precision": 0.9834,
+      "recall": 0.9833,
+      "f1_score": 0.9833,
+      "confusion_matrix": [
+        [
+          449,
+          6,
+          0
+        ],
+        [
+          8,
+          758,
+          6
+        ],
+        [
+          0,
+          10,
+          563
+        ]
+      ],
+      "feature_importance": {
+        "recent_win_rate": 0.4907,
+        "consecutive_losses": 0.1447,
+        "recent_accuracy": 0.1429,
+        "accuracy": 0.0848,
+        "current_difficulty": 0.0662,
+        "win_rate": 0.0279,
+        "consecutive_wins": 0.0191,
+        "death_rate": 0.0067,
+        "survival_rate": 0.005,
+        "reaction_time": 0.0034,
+        "recent_score": 0.0033,
+        "average_score": 0.0018,
+        "completion_time": 0.0018,
+        "performance_trend": 0.0016
+      },
+      "trained_at": "2026-09-24T18:18:26.730739+00:00",
+      "model_path": "ml/models\\gradient_boosting_model.joblib",
+      "is_champion": true
+    }
+  },
+  "training_timestamp": "2026-09-24T18:18:26.730770+00:00"
+}

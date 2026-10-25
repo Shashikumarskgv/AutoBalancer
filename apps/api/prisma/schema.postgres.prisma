@@ -1,0 +1,134 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String             @id @default(cuid())
+  name         String
+  email        String             @unique
+  passwordHash String
+  role         String             @default("PLAYER")
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  profile            PlayerProfile?
+  gameSessions       GameSession[]
+  gameplayEvents     GameplayEvent[]
+  snapshots          PerformanceSnapshot[]
+  difficultyChanges  DifficultyChange[]
+
+  @@map("users")
+}
+
+model PlayerProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName       String
+  avatar            String   @default("default-avatar.png")
+  currentDifficulty Int      @default(3)
+  totalGames        Int      @default(0)
+  totalScore        Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("player_profiles")
+}
+
+model GameSession {
+  id            String    @id @default(cuid())
+  playerId      String
+  player        User      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  difficulty    Int
+  startedAt     DateTime  @default(now())
+  endedAt       DateTime?
+  score         Int       @default(0)
+  won           Boolean   @default(false)
+  completed     Boolean   @default(false)
+  accuracy      Float     @default(0.0)
+  targetsHit    Int       @default(0)
+  targetsMissed Int       @default(0)
+  enemiesKilled Int       @default(0)
+  damageTaken   Int       @default(0)
+
+  events            GameplayEvent[]
+  snapshots         PerformanceSnapshot[]
+  difficultyChanges DifficultyChange[]
+
+  @@map("game_sessions")
+}
+
+model GameplayEvent {
+  id           String      @id @default(cuid())
+  sessionId    String
+  session      GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  playerId     String
+  player       User        @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  eventType    String
+  eventValue   Float?
+  reactionTime Float?
+  timestamp    DateTime    @default(now())
+  metadata     String?
+
+  @@map("gameplay_events")
+}
+
+model PerformanceSnapshot {
+  id               String      @id @default(cuid())
+  playerId         String
+  player           User        @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  sessionId        String
+  session          GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  accuracy         Float
+  winRate          Float
+  deathRate        Float
+  survivalRate     Float
+  averageScore     Float
+  reactionTime     Float
+  completionTime   Float
+  performanceScore Float
+  performanceTrend Float
+  createdAt        DateTime    @default(now())
+
+  @@map("performance_snapshots")
+}
+
+model DifficultyChange {
+  id                 String       @id @default(cuid())
+  playerId           String
+  player             User         @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  sessionId          String?
+  session            GameSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  previousDifficulty Int
+  newDifficulty      Int
+  adjustment         Int
+  confidence         Float
+  reason             String
+  modelVersion       String
+  createdAt          DateTime     @default(now())
+
+  @@map("difficulty_changes")
+}
+
+model MLModel {
+  id             String   @id @default(cuid())
+  modelName      String
+  version        String   @unique
+  algorithm      String
+  datasetVersion String
+  accuracy       Float
+  precision      Float
+  recall         Float
+  f1Score        Float
+  modelPath      String
+  trainedAt      DateTime @default(now())
+  isActive       Boolean  @default(false)
+  metadata       String?
+
+  @@map("ml_models")
+}

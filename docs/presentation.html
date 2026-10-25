@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Difficulty Auto-Balancing System — v1.1 Presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ─── RESET & PURE STANDALONE DESIGN SYSTEM (NO EXTERNAL CSS DEPENDENCY) ─── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    :root {
+      --bg: #080B16;
+      --header-bg: #0B1020;
+      --card-bg: #101528;
+      --card-inner: #0B0F1D;
+      --card-border: #1E293B;
+      --purple: #6366F1;
+      --purple-glow: rgba(99, 102, 241, 0.25);
+      --cyan: #22D3EE;
+      --cyan-glow: rgba(34, 211, 238, 0.25);
+      --green: #22C55E;
+      --green-glow: rgba(34, 197, 94, 0.25);
+      --red: #EF4444;
+      --amber: #F59E0B;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+      --font-heading: 'Orbitron', -apple-system, sans-serif;
+      --font-sub: 'Rajdhani', -apple-system, sans-serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Fira Code', monospace;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+    /* Grid background pattern */
+    .bg-grid {
+      background-image: radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+    /* Typography */
+    .font-orbitron { font-family: var(--font-heading); }
+    .font-rajdhani { font-family: var(--font-sub); }
+    .font-mono { font-family: var(--font-mono); }
+
+    /* Top Bar */
+    header {
+      height: 56px;
+      background: rgba(11, 16, 32, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+    .progress-track {
+      width: 100%;
+      height: 3px;
+      background: #0B1020;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--purple), var(--cyan), var(--green));
+      transition: width 0.3s ease;
+    }
+
+    /* Main Presentation Stage */
+    main {
+      flex: 1;
+      width: 100%;
+      height: calc(100vh - 59px);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Slide container: Always fills wide 16:9 box */
+    .slide {
+      display: none;
+      width: 100%;
+      max-width: 1380px;
+      height: 100%;
+      max-height: 840px;
+      padding: 24px 36px;
+      flex-direction: column;
+      justify-content: space-between;
+      opacity: 0;
+      transition: opacity 0.25s ease-in-out;
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    /* Cards & Containers */
+    .cyber-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cyber-card.glow-purple {
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 0 30px -5px var(--purple-glow);
+    }
+    .cyber-card.glow-cyan {
+      border-color: rgba(34, 211, 238, 0.5);
+      box-shadow: 0 0 30px -5px var(--cyan-glow);
+    }
+    .cyber-card.glow-green {
+      border-color: rgba(34, 197, 94, 0.6);
+      box-shadow: 0 0 30px -5px var(--green-glow);
+    }
+    .cyber-card.glow-red {
+      border-color: rgba(239, 68, 68, 0.5);
+      box-shadow: 0 0 30px -5px rgba(239, 68, 68, 0.2);
+    }
+
+    /* Common Layout Grids */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+    .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+    .grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+    .grid-12 { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; }
+    .col-span-4 { grid-column: span 4; }
+    .col-span-5 { grid-column: span 5; }
+    .col-span-7 { grid-column: span 7; }
+    .col-span-8 { grid-column: span 8; }
+
+    /* Header text */
+    .slide-category {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--cyan);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .slide-title {
+      font-family: var(--font-heading);
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .badge-purple { background: #1E1B4B; color: #A5B4FC; border: 1px solid #4338CA; }
+    .badge-cyan { background: #083344; color: #67E8F9; border: 1px solid #0891B2; }
+    .badge-green { background: #052E16; color: #86EFAC; border: 1px solid #16A34A; }
+    .badge-red { background: #450A0A; color: #FCA5A5; border: 1px solid #DC2626; }
+    .badge-amber { background: #451A03; color: #FDE68A; border: 1px solid #D97706; }
+
+    /* Buttons */
+    .btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--card-border);
+      background: #101528;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .btn:hover {
+      background: #1E293B;
+      color: #fff;
+    }
+    .btn-primary {
+      background: var(--purple);
+      border-color: #4F46E5;
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #4F46E5;
+    }
+
+    /* Tables */
+    .cyber-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+    .cyber-table th {
+      padding: 12px 14px;
+      background: #161D36;
+      color: #CBD5E1;
+      font-weight: 700;
+      text-align: left;
+      border-bottom: 2px solid var(--card-border);
+    }
+    .cyber-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+      color: var(--text-main);
+    }
+    .cyber-table tr:hover td {
+      background: rgba(30, 41, 59, 0.4);
+    }
+    .cyber-table tr.champion-row td {
+      background: rgba(16, 185, 129, 0.12);
+      border-top: 1px solid rgba(16, 185, 129, 0.4);
+      border-bottom: 1px solid rgba(16, 185, 129, 0.4);
+      font-weight: 700;
+      color: #6EE7B7;
+    }
+
+    /* Speaker Notes Drawer */
+    #speakerNotesDrawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 180px;
+      background: #090D1A;
+      border-top: 2px solid var(--purple);
+      padding: 16px 36px;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      z-index: 200;
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8);
+    }
+    #speakerNotesDrawer.active {
+      display: flex;
+    }
+
+    /* Pulse dot */
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan);
+      display: inline-block;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+  </style>
+</head>
+<body class="bg-grid">
+
+  <!-- TOP HEADER -->
+  <header>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span class="pulse-dot"></span>
+      <span class="font-orbitron" style="font-size: 13px; font-weight: 800; letter-spacing: 0.1em; color: var(--cyan);">
+        GAME DIFFICULTY AUTO-BALANCING SYSTEM
+      </span>
+      <span class="badge badge-purple">v1.1 CHAMPION DECK</span>
+    </div>
+
+    <!-- CONTROLS -->
+    <div style="display: flex; align-items: center; gap: 14px; font-family: var(--font-mono); font-size: 12px;">
+      <div style="background: #101528; border: 1px solid var(--card-border); padding: 4px 12px; border-radius: 8px;">
+        <span style="color: var(--text-dim);">SLIDE:</span>
+        <span id="currentSlideNum" style="color: var(--cyan); font-weight: 800;">1</span>
+        <span style="color: var(--text-dim);">/</span>
+        <span id="totalSlidesNum" style="color: var(--text-muted);">15</span>
+      </div>
+
+      <button onclick="prevSlide()" class="btn">◀ PREV</button>
+      <button onclick="nextSlide()" class="btn btn-primary">NEXT ▶</button>
+      <button onclick="toggleNotes()" id="notesToggleBtn" class="btn" style="color: var(--amber); border-color: rgba(245, 158, 11, 0.4);">
+        🎙️ NOTES (<span id="notesStatus">OFF</span>)
+      </button>
+      <button onclick="toggleFullscreen()" class="btn" title="Toggle Fullscreen (F)">⛶</button>
+    </div>
+  </header>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-track">
+    <div id="progressBar" class="progress-fill" style="width: 6.66%;"></div>
+  </div>
+
+  <!-- MAIN PRESENTATION STAGE -->
+  <main>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 1: TITLE SLIDE -->
+    <!-- ========================================== -->
+    <section class="slide active" data-slide="1">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span class="badge badge-purple">⚡ AI-POWERED CLOSED-LOOP ADAPTATION</span>
+        <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); display: flex; gap: 12px;">
+          <span class="badge badge-green">GB CHAMPION (98.33% ACC)</span>
+          <span>SVCE CSE 2026–27</span>
+        </div>
+      </div>
+
+      <div class="grid-12" style="align-items: center; margin: auto 0;">
+        <div class="col-span-7" style="display: flex; flex-direction: column; gap: 16px;">
+          <h1 class="font-orbitron" style="font-size: 46px; font-weight: 900; line-height: 1.15; color: #fff;">
+            GAME DIFFICULTY<br>
+            <span style="background: linear-gradient(90deg, #818CF8, #22D3EE, #6EE7B7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+              AUTO-BALANCING
+            </span><br>
+            SYSTEM
+          </h1>
+          <p style="font-size: 16px; color: var(--text-muted); font-weight: 300; line-height: 1.6; max-width: 580px;">
+            A Closed-Loop Dynamic Difficulty Adjustment (DDA) Platform Powered by Real-Time Telemetry & Gradient Boosting Machine Learning.
+          </p>
+
+          <div style="display: flex; gap: 12px; margin-top: 8px;">
+            <div style="background: #101528; border: 1px solid var(--card-border); padding: 10px 16px; border-radius: 12px;">
+              <span style="font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-family: var(--font-mono); display: block;">Features</span>
+              <span style="font-family: var(--font-mono); font-weight: 700; color: var(--cyan); font-size: 13px;">14 Telemetry Metrics</span>
+            </div>
+            <div style="background: #101528; border: 1px solid var(--card-border); padding: 10px 16px; border-radius: 12px;">
+              <span style="font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-family: var(--font-mono); display: block;">Action Space</span>
+              <span style="font-family: var(--font-mono); font-weight: 700; color: var(--purple); font-size: 13px;">{-1, 0, +1} Steps</span>
+            </div>
+            <div style="background: #101528; border: 1px solid var(--card-border); padding: 10px 16px; border-radius: 12px;">
+              <span style="font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-family: var(--font-mono); display: block;">Guardrails</span>
+              <span style="font-family: var(--font-mono); font-weight: 700; color: var(--green); font-size: 13px;">6 Safety Rules</span>
+            </div>
+            <div style="background: #101528; border: 1px solid var(--card-border); padding: 10px 16px; border-radius: 12px;">
+              <span style="font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-family: var(--font-mono); display: block;">Sync</span>
+              <span style="font-family: var(--font-mono); font-weight: 700; color: var(--amber); font-size: 13px;">Zero-Refresh Sockets</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-5">
+          <div class="cyber-card glow-purple" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; font-family: var(--font-mono); font-size: 11px;">
+              <span style="color: var(--cyan); font-weight: 700;">⚡ PRODUCTION ARCHITECTURE</span>
+              <span style="color: var(--text-dim);">NEXT.JS 14 + FASTAPI</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin: 18px 0; font-family: var(--font-mono); font-size: 12px;">
+              <div style="display: flex; justify-content: space-between; background: var(--card-inner); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+                <span style="color: var(--text-muted);">Champion Model:</span>
+                <span style="color: var(--green); font-weight: 700;">Gradient Boosting (gb-1.0.0)</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; background: var(--card-inner); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+                <span style="color: var(--text-muted);">5-Fold CV Accuracy:</span>
+                <span style="color: var(--cyan); font-weight: 700;">98.19% ± 0.27%</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; background: var(--card-inner); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+                <span style="color: var(--text-muted);">ML Inference Round-Trip:</span>
+                <span style="color: #A5B4FC; font-weight: 700;">&lt; 15 ms Latency</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; background: var(--card-inner); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+                <span style="color: var(--text-muted);">Difficulty Tiers:</span>
+                <span style="color: var(--amber); font-weight: 700;">Levels 1 to 5 (Dynamic)</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; background: var(--card-inner); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+                <span style="color: var(--text-muted);">Coordinate Scaling:</span>
+                <span style="color: #F472B6; font-weight: 700;">900x520 Virtual Arena</span>
+              </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--card-border); padding-top: 12px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);">
+              <span>Department of CSE</span>
+              <span style="color: var(--purple); font-weight: 700;">Capstone Project 2026–27</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--card-border); padding-top: 12px; display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);">
+        <span>Antigravity Engineering Specification v1.1</span>
+        <span>Press [▶] or [Space] to advance slides</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 2: PROBLEM STATEMENT -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="2">
+      <div>
+        <div class="slide-category">01 / CHALLENGE & MOTIVATION</div>
+        <h2 class="slide-title">THE PROBLEM: THE FLAW OF FIXED GAME DIFFICULTY</h2>
+      </div>
+
+      <div class="grid-3" style="margin: auto 0;">
+        <!-- Card 1 -->
+        <div class="cyber-card glow-cyan" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 380px;">
+          <div>
+            <div style="font-size: 38px; margin-bottom: 12px;">😐</div>
+            <h3 class="font-orbitron" style="color: var(--cyan); font-size: 18px; font-weight: 800; margin-bottom: 10px;">TOO EASY: BOREDOM</h3>
+            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+              When game mechanics fail to challenge an experienced or rapidly improving player, repetition replaces stimulation.
+            </p>
+            <ul style="margin-top: 16px; font-family: var(--font-mono); font-size: 12px; color: #CBD5E1; line-height: 1.8; list-style: none;">
+              <li>• Static targets feel trivial</li>
+              <li>• Mechanical aiming skills plateau</li>
+              <li>• Low engagement & high abandonment</li>
+            </ul>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--cyan); font-weight: 700;">
+            RESULT: PLAYER ATTRITION
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="cyber-card glow-purple" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 380px; border-width: 2px; border-color: var(--purple);">
+          <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%);">
+            <span class="badge badge-purple" style="background: var(--purple); color: #fff; font-weight: 800;">CSIKSZENTMIHALYI FLOW CHANNEL</span>
+          </div>
+          <div style="margin-top: 10px;">
+            <div style="font-size: 38px; margin-bottom: 12px; text-align: center;">🎯</div>
+            <h3 class="font-orbitron" style="color: #A5B4FC; font-size: 18px; font-weight: 800; text-align: center; margin-bottom: 10px;">THE OPTIMAL FLOW STATE</h3>
+            <p style="font-size: 13px; color: #E2E8F0; text-align: center; line-height: 1.6;">
+              The sweet spot where player competence precisely mirrors dynamic game challenge in real time.
+            </p>
+            <div style="background: var(--card-inner); border: 1px solid rgba(99, 102, 241, 0.4); padding: 12px; border-radius: 10px; margin: 18px 0; text-align: center; font-family: var(--font-mono); font-size: 12px;">
+              <span style="color: var(--green); font-weight: 700;">Player Mastery</span> = <span style="color: var(--cyan); font-weight: 700;">Dynamic Challenge</span>
+            </div>
+            <p style="font-size: 11px; color: var(--text-dim); text-align: center;">
+              Requires autonomous calibration of target speeds, lifespans, spawn rates, and core shields.
+            </p>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--green); font-weight: 700; text-align: center;">
+            GOAL: SELF-BALANCING EQUILIBRIUM
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="cyber-card glow-red" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 380px;">
+          <div>
+            <div style="font-size: 38px; margin-bottom: 12px;">😤</div>
+            <h3 class="font-orbitron" style="color: var(--red); font-size: 18px; font-weight: 800; margin-bottom: 10px;">TOO HARD: FRUSTRATION</h3>
+            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+              When game difficulty spikes beyond player capability, repeated failures trigger cognitive fatigue and frustration.
+            </p>
+            <ul style="margin-top: 16px; font-family: var(--font-mono); font-size: 12px; color: #CBD5E1; line-height: 1.8; list-style: none;">
+              <li>• Rapid core shield breaches</li>
+              <li>• Unforgiving reaction thresholds</li>
+              <li>• Rage quit & immediate session drop</li>
+            </ul>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--red); font-weight: 700;">
+            RESULT: RAGE QUIT & CHURN
+          </div>
+        </div>
+      </div>
+
+      <div class="cyber-card" style="padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 12px;">
+        <span style="color: var(--cyan); font-weight: 700;">CORE TAKEAWAY:</span>
+        <span style="color: #E2E8F0;">Static difficulty tiers treat all players as identical. An intelligent rate-of-change controller is needed to continuously keep players in the flow channel.</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 3: OBJECTIVES -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="3">
+      <div>
+        <div class="slide-category">02 / PROJECT SCOPE</div>
+        <h2 class="slide-title">FIVE CORE ENGINEERING OBJECTIVES</h2>
+      </div>
+
+      <div class="grid-5" style="margin: auto 0;">
+        <div class="cyber-card glow-cyan" style="min-height: 360px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="font-size: 32px; margin-bottom: 12px;">🎯</div>
+            <h3 class="font-orbitron" style="font-size: 13px; color: var(--cyan); font-weight: 800; margin-bottom: 8px;">1. REAL-TIME TELEMETRY</h3>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+              Stream micro-events (accuracy, reaction time in ms, click coordinates, damage) asynchronously from canvas to backend API.
+            </p>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">
+            Sub-millisecond tracking
+          </div>
+        </div>
+
+        <div class="cyber-card glow-purple" style="min-height: 360px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="font-size: 32px; margin-bottom: 12px;">📊</div>
+            <h3 class="font-orbitron" style="font-size: 13px; color: #A5B4FC; font-weight: 800; margin-bottom: 8px;">2. FEATURE ENGINE</h3>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+              Synthesize 14 engineered metrics blending lifetime skill baselines, spatial accuracy, and 3-game short-term momentum trends.
+            </p>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">
+            14-dimensional vector
+          </div>
+        </div>
+
+        <div class="cyber-card glow-green" style="min-height: 360px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="font-size: 32px; margin-bottom: 12px;">🤖</div>
+            <h3 class="font-orbitron" style="font-size: 13px; color: var(--green); font-weight: 800; margin-bottom: 8px;">3. ML RATE CONTROLLER</h3>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+              Classify player state into step adjustments <span style="font-family: var(--font-mono); color: var(--green);">{-1, 0, +1}</span> with calibrated confidence via FastAPI.
+            </p>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">
+            98.33% Champion model
+          </div>
+        </div>
+
+        <div class="cyber-card" style="min-height: 360px; display: flex; flex-direction: column; justify-content: space-between; border-color: rgba(245, 158, 11, 0.4);">
+          <div>
+            <div style="font-size: 32px; margin-bottom: 12px;">🛡️</div>
+            <h3 class="font-orbitron" style="font-size: 13px; color: var(--amber); font-weight: 800; margin-bottom: 8px;">4. 6 GUARDRAILS</h3>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+              Filter raw predictions through 6 deterministic safety rules: 1–5 level clamps, ±1 limits, 30s cooldowns, and 65% confidence filters.
+            </p>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">
+            Zero erratic fluctuations
+          </div>
+        </div>
+
+        <div class="cyber-card" style="min-height: 360px; display: flex; flex-direction: column; justify-content: space-between; border-color: rgba(99, 102, 241, 0.4);">
+          <div>
+            <div style="font-size: 32px; margin-bottom: 12px;">⚡</div>
+            <h3 class="font-orbitron" style="font-size: 13px; color: #818CF8; font-weight: 800; margin-bottom: 8px;">5. ZERO-REFRESH</h3>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+              Synchronize verified level adjustments via Socket.IO directly to active game sessions and player HUD without page refreshes.
+            </p>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">
+            Sub-50ms sync latency
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--card-border); padding-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-align: center;">
+        All 5 objectives implemented and verified across unit and integration test suites.
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 4: PROPOSED SOLUTION -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="4">
+      <div>
+        <div class="slide-category">03 / SOLUTION PARADIGM</div>
+        <h2 class="slide-title">THE CLOSED-LOOP ADAPTATION CYCLE</h2>
+      </div>
+
+      <div class="grid-6" style="margin: auto 0; align-items: center;">
+        <div class="cyber-card" style="text-align: center; border-color: var(--cyan); padding: 18px 12px;">
+          <span class="badge badge-cyan" style="font-size: 9px; margin-bottom: 8px;">STEP 1</span>
+          <div style="font-size: 28px; margin: 6px 0;">🕹️</div>
+          <div class="font-orbitron" style="font-size: 11px; font-weight: 800; color: #fff;">PLAYER ACTION</div>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Clicks & reticle aim in 900x520 arena</p>
+        </div>
+
+        <div class="cyber-card" style="text-align: center; border-color: var(--purple); padding: 18px 12px;">
+          <span class="badge badge-purple" style="font-size: 9px; margin-bottom: 8px;">STEP 2</span>
+          <div style="font-size: 28px; margin: 6px 0;">📡</div>
+          <div class="font-orbitron" style="font-size: 11px; font-weight: 800; color: #fff;">TELEMETRY STREAM</div>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">HTTP events with reaction times</p>
+        </div>
+
+        <div class="cyber-card" style="text-align: center; border-color: var(--green); padding: 18px 12px;">
+          <span class="badge badge-green" style="font-size: 9px; margin-bottom: 8px;">STEP 3</span>
+          <div style="font-size: 28px; margin: 6px 0;">⚙️</div>
+          <div class="font-orbitron" style="font-size: 11px; font-weight: 800; color: #fff;">14-FEATURE VECTOR</div>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Accuracy, trends, win/loss streaks</p>
+        </div>
+
+        <div class="cyber-card" style="text-align: center; border-color: var(--amber); padding: 18px 12px;">
+          <span class="badge badge-amber" style="font-size: 9px; margin-bottom: 8px;">STEP 4</span>
+          <div style="font-size: 28px; margin: 6px 0;">🤖</div>
+          <div class="font-orbitron" style="font-size: 11px; font-weight: 800; color: #fff;">ML INFERENCE</div>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Predicts -1 / 0 / +1 with confidence</p>
+        </div>
+
+        <div class="cyber-card" style="text-align: center; border-color: var(--red); padding: 18px 12px;">
+          <span class="badge badge-red" style="font-size: 9px; margin-bottom: 8px;">STEP 5</span>
+          <div style="font-size: 28px; margin: 6px 0;">🛡️</div>
+          <div class="font-orbitron" style="font-size: 11px; font-weight: 800; color: #fff;">6 GUARDRAILS</div>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Validates safety rules & bounds</p>
+        </div>
+
+        <div class="cyber-card" style="text-align: center; border-color: var(--cyan); padding: 18px 12px;">
+          <span class="badge badge-cyan" style="font-size: 9px; margin-bottom: 8px;">STEP 6</span>
+          <div style="font-size: 28px; margin: 6px 0;">⚡</div>
+          <div class="font-orbitron" style="font-size: 11px; font-weight: 800; color: #fff;">SOCKET.IO SYNC</div>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">HUD & target speeds update in &lt;50ms</p>
+        </div>
+      </div>
+
+      <div class="cyber-card glow-purple" style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="font-size: 28px;">🔄</span>
+          <div>
+            <span class="font-orbitron" style="color: #A5B4FC; font-size: 13px; font-weight: 700; display: block;">CONTINUOUS CLOSED-LOOP EQUILIBRIUM</span>
+            <span style="font-size: 12px; color: var(--text-muted);">The engine autonomously balances difficulty during live gameplay without interrupting player flow or forcing manual menu resets.</span>
+          </div>
+        </div>
+        <span class="badge badge-green" style="font-size: 12px; padding: 6px 14px;">SYNC LATENCY &lt; 50ms</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 5: SYSTEM ARCHITECTURE -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="5">
+      <div>
+        <div class="slide-category">04 / ARCHITECTURAL BLUEPRINT</div>
+        <h2 class="slide-title">END-TO-END MICROSERVICE PIPELINE</h2>
+      </div>
+
+      <div class="grid-4" style="margin: auto 0;">
+        <div class="cyber-card glow-cyan" style="min-height: 400px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <span class="badge badge-cyan" style="margin-bottom: 10px;">CLIENT TIER</span>
+            <h3 class="font-orbitron" style="font-size: 14px; color: #fff; margin-bottom: 8px;">Next.js 14 Frontend</h3>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 14px;">Interactive Arena & Real-Time Dashboards</p>
+            <ul style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.8; list-style: none;">
+              <li>• HTML5 Canvas (900x520)</li>
+              <li>• Responsive scaleX/scaleY</li>
+              <li>• Socket.IO Client Listener</li>
+              <li>• Recharts Performance Curves</li>
+              <li>• Tailwind Cyber Dark Theme</li>
+            </ul>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--cyan);">
+            PORT: 3000 (React 18)
+          </div>
+        </div>
+
+        <div class="cyber-card glow-purple" style="min-height: 400px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <span class="badge badge-purple" style="margin-bottom: 10px;">API GATEWAY</span>
+            <h3 class="font-orbitron" style="font-size: 14px; color: #fff; margin-bottom: 8px;">Express.js Engine</h3>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 14px;">Telemetry, Feature Engine & Guardrails</p>
+            <ul style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.8; list-style: none;">
+              <li>• JWT Auth & Bcrypt Hash</li>
+              <li>• Telemetry Event Ingest</li>
+              <li>• 14-Feature Synthesizer</li>
+              <li>• Guardrail Safety Pipeline</li>
+              <li>• Socket.IO Gateway Broadcast</li>
+            </ul>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 11px; color: #A5B4FC;">
+            PORT: 4000 (Node.js)
+          </div>
+        </div>
+
+        <div class="cyber-card glow-green" style="min-height: 400px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <span class="badge badge-green" style="margin-bottom: 10px;">INFERENCE TIER</span>
+            <h3 class="font-orbitron" style="font-size: 14px; color: #fff; margin-bottom: 8px;">FastAPI Microservice</h3>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 14px;">High-Throughput Model Serving</p>
+            <ul style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.8; list-style: none;">
+              <li>• Python 3.13 + Uvicorn</li>
+              <li>• Champion Gradient Boosting</li>
+              <li>• /predict, /models, /retrain</li>
+              <li>• Sub-15ms Round-Trip Ping</li>
+              <li>• Calibrated Probabilities</li>
+            </ul>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--green);">
+            PORT: 8000 (FastAPI)
+          </div>
+        </div>
+
+        <div class="cyber-card" style="min-height: 400px; display: flex; flex-direction: column; justify-content: space-between; border-color: rgba(245, 158, 11, 0.4);">
+          <div>
+            <span class="badge badge-amber" style="margin-bottom: 10px;">PERSISTENCE</span>
+            <h3 class="font-orbitron" style="font-size: 14px; color: #fff; margin-bottom: 8px;">PostgreSQL / SQLite</h3>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 14px;">Prisma ORM & Audit Trail</p>
+            <ul style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.8; list-style: none;">
+              <li>• User & Player Profiles</li>
+              <li>• Active Game Sessions</li>
+              <li>• Granular Gameplay Events</li>
+              <li>• Difficulty Changes Ledger</li>
+              <li>• Daily Telemetry Snapshots</li>
+            </ul>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--amber);">
+            PRISMA ORM / DOCKER
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--card-border); padding-top: 12px; display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);">
+        <span>Inter-Service Communication: HTTP REST (Events & Features) + WebSockets (Real-Time Adaptations)</span>
+        <span style="color: var(--cyan);">Database Query Latency: &lt; 10ms</span>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 6: GAMEPLAY & TELEMETRY -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="6">
+      <div>
+        <div class="slide-category">05 / GAMEPLAY SIMULATOR</div>
+        <h2 class="slide-title">TARGET SURVIVAL ARENA & TELEMETRY</h2>
+      </div>
+
+      <div class="grid-12" style="margin: auto 0; align-items: center;">
+        <div class="col-span-7">
+          <div class="cyber-card glow-cyan">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 10px; font-family: var(--font-mono); font-size: 11px;">
+              <span style="color: var(--cyan); font-weight: 700;">VIRTUAL ARENA (900 x 520 INTERNAL RESOLUTION)</span>
+              <span class="badge badge-green" style="font-size: 10px;">COORDINATE FIX VERIFIED</span>
+            </div>
+
+            <div style="position: relative; width: 100%; height: 260px; background: #060913; border-radius: 12px; margin: 16px 0; border: 1px solid var(--card-border); overflow: hidden; display: flex; align-items: center; justify-content: center;">
+              <!-- Core -->
+              <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(99, 102, 241, 0.25); border: 2px solid var(--purple); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: #A5B4FC;">
+                CORE 100
+              </div>
+
+              <!-- Target 1 -->
+              <div style="position: absolute; top: 30px; left: 60px; padding: 6px 12px; border-radius: 50px; background: rgba(34, 197, 94, 0.2); border: 1.5px solid var(--green); font-family: var(--font-mono); font-size: 10px; color: #86EFAC;">
+                TARGET (150 px/s)
+              </div>
+
+              <!-- Target 2 -->
+              <div style="position: absolute; bottom: 40px; right: 80px; padding: 6px 12px; border-radius: 50px; background: rgba(245, 158, 11, 0.2); border: 1.5px solid var(--amber); font-family: var(--font-mono); font-size: 10px; color: #FDE68A;">
+                EXPIRING (0.8s)
+              </div>
+
+              <!-- Reticle cursor -->
+              <div style="position: absolute; top: 80px; left: 320px; display: flex; flex-direction: column; align-items: center;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--cyan); display: flex; align-items: center; justify-content: center;">
+                  <div style="width: 4px; height: 4px; background: var(--cyan); border-radius: 50%;"></div>
+                </div>
+                <span style="font-family: var(--font-mono); font-size: 9px; color: var(--cyan); margin-top: 4px; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 4px;">
+                  x: 450, y: 260
+                </span>
+              </div>
+            </div>
+
+            <div style="background: var(--card-inner); border: 1px solid var(--card-border); padding: 12px; border-radius: 8px; font-family: var(--font-mono); font-size: 11px; color: #CBD5E1;">
+              <span style="color: var(--cyan); font-weight: 700;">Coordinate Transform Formula:</span><br>
+              <code>scaleX = canvas.width / rect.width; x = (clientX - rect.left) * scaleX;</code><br>
+              Eliminates the ~150px rightward offset bug across all monitor resolutions without hardcoded offsets.
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-5" style="display: flex; flex-direction: column; gap: 16px;">
+          <div class="cyber-card">
+            <span class="font-orbitron" style="font-size: 12px; color: var(--cyan); font-weight: 700; display: block; margin-bottom: 10px;">
+              DYNAMIC ARENA TUNING PER LEVEL
+            </span>
+            <div style="font-family: var(--font-mono); font-size: 11px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Level 1:</span> <span style="color: var(--green);">Speed: 60 px/s • Lifespan: 3.5s</span></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Level 2:</span> <span style="color: var(--cyan);">Speed: 100 px/s • Lifespan: 2.8s</span></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Level 3:</span> <span style="color: #A5B4FC;">Speed: 150 px/s • Lifespan: 2.2s</span></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Level 4:</span> <span style="color: var(--amber);">Speed: 200 px/s • Lifespan: 1.6s</span></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-dim);">Level 5:</span> <span style="color: var(--red);">Speed: 260 px/s • Lifespan: 1.2s</span></div>
+            </div>
+          </div>
+
+          <div class="cyber-card">
+            <span class="font-orbitron" style="font-size: 12px; color: #A5B4FC; font-weight: 700; display: block; margin-bottom: 10px;">
+              INGESTED TELEMETRY STREAM
+            </span>
+            <ul style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.8; list-style: none;">
+              <li>• <strong style="color: var(--cyan);">TARGET_HIT:</strong> reactionTimeMs, coordinates</li>
+              <li>• <strong style="color: var(--amber);">TARGET_MISSED:</strong> distance to nearest target</li>
+              <li>• <strong style="color: var(--red);">CORE_DAMAGED:</strong> elapsed time, shield remaining</li>
+              <li>• <strong style="color: var(--green);">SESSION_END:</strong> final score, win status</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--card-border); padding-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-align: center;">
+        Verified across 7 coordinate-mapping unit tests covering screen center, corners, and window resizes.
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 7: ML METHODOLOGY -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="7">
+      <div>
+        <div class="slide-category">06 / MACHINE LEARNING</div>
+        <h2 class="slide-title">14-FEATURE VECTOR & 3-CLASS CONTROLLER</h2>
+      </div>
+
+      <div class="grid-3" style="margin: auto 0;">
+        <div class="cyber-card glow-cyan" style="min-height: 420px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <span class="badge badge-cyan" style="margin-bottom: 8px;">INPUT FEATURES</span>
+            <h3 class="font-orbitron" style="font-size: 14px; color: #fff; margin-bottom: 12px;">14 Engineered Metrics</h3>
+            <div style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.7;">
+              <div>1. current_difficulty (1–5)</div>
+              <div>2. accuracy (0.0–1.0)</div>
+              <div>3. win_rate (0.0–1.0)</div>
+              <div>4. death_rate (0.0–1.0)</div>
+              <div>5. survival_rate (0.0–1.0)</div>
+              <div>6. average_score (int)</div>
+              <div>7. reaction_time (ms)</div>
+              <div>8. completion_time (s)</div>
+              <div>9. performance_trend (-1..1)</div>
+              <div>10. consecutive_wins (int)</div>
+              <div>11. consecutive_losses (int)</div>
+              <div>12. recent_accuracy (last 3)</div>
+              <div>13. recent_win_rate (last 3)</div>
+              <div>14. recent_score (last 3)</div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 10px; color: var(--cyan);">
+            Spatial & Temporal Balance
+          </div>
+        </div>
+
+        <div class="cyber-card glow-purple" style="min-height: 420px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <span class="badge badge-purple" style="margin-bottom: 8px;">TARGET LABELS</span>
+            <h3 class="font-orbitron" style="font-size: 14px; color: #fff; margin-bottom: 12px;">Rate-of-Change Action Space</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px; font-family: var(--font-mono); font-size: 11px;">
+              <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); padding: 10px; border-radius: 8px;">
+                <span style="color: var(--red); font-weight: 700; display: block; margin-bottom: 4px;">[-1] DECREASE DIFFICULTY</span>
+                <span style="color: #CBD5E1;">Player overwhelmed; high consecutive losses or dropping accuracy.</span>
+                <span style="color: var(--text-dim); display: block; margin-top: 4px;">Share: 25.28% (3,034 samples)</span>
+              </div>
+              <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.4); padding: 10px; border-radius: 8px;">
+                <span style="color: var(--green); font-weight: 700; display: block; margin-bottom: 4px;">[ 0] MAINTAIN DIFFICULTY</span>
+                <span style="color: #CBD5E1;">Optimal flow channel; skill evenly matched to current level.</span>
+                <span style="color: var(--text-dim); display: block; margin-top: 4px;">Share: 42.90% (5,148 samples)</span>
+              </div>
+              <div style="background: rgba(34, 211, 238, 0.1); border: 1px solid rgba(34, 211, 238, 0.4); padding: 10px; border-radius: 8px;">
+                <span style="color: var(--cyan); font-weight: 700; display: block; margin-bottom: 4px;">[+1] INCREASE DIFFICULTY</span>
+                <span style="color: #CBD5E1;">Player dominating; rapid clears, high reaction speeds & win streaks.</span>
+                <span style="color: var(--text-dim); display: block; margin-top: 4px;">Share: 31.82% (3,818 samples)</span>
+              </div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 10px; color: #A5B4FC;">
+            3-Class Categorical Formulation
+          </div>
+        </div>
+
+        <div class="cyber-card glow-green" style="min-height: 420px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <span class="badge badge-green" style="margin-bottom: 8px;">DATASET & CV</span>
+            <h3 class="font-orbitron" style="font-size: 14px; color: #fff; margin-bottom: 12px;">12,000 Gameplay Records</h3>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px;">
+              Generated via realistic archetype heuristics (Novice, Intermediate, Expert) with fixed random seed 42.
+            </p>
+            <div style="font-family: var(--font-mono); font-size: 11px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; justify-content: space-between; background: var(--card-inner); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
+                <span style="color: var(--text-dim);">Training (70%):</span>
+                <span style="color: var(--cyan); font-weight: 700;">8,399 records</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; background: var(--card-inner); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
+                <span style="color: var(--text-dim);">Validation (15%):</span>
+                <span style="color: #A5B4FC; font-weight: 700;">1,801 records</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; background: var(--card-inner); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
+                <span style="color: var(--text-dim);">Test (15%):</span>
+                <span style="color: var(--green); font-weight: 700;">1,800 records</span>
+              </div>
+            </div>
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.4); padding: 8px 10px; border-radius: 6px; margin-top: 12px; font-family: var(--font-mono); font-size: 10px; color: #FDE68A;">
+              ⚠️ Transparency: High synthetic scores reflect clean archetype rules. Guardrails ensure live player safety.
+            </div>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 10px; color: var(--green);">
+            5-Fold Stratified Cross-Validation
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--card-border); padding-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-align: center;">
+        Predicting a rate-of-change delta prevents radical level volatility and yields smooth difficulty convergence.
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 8: MODEL COMPARISON & RESULTS (FIXED LAYOUT) -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="8">
+      <div>
+        <div class="slide-category">07 / MODEL EVALUATION</div>
+        <h2 class="slide-title">MODEL COMPARISON & CHAMPION SELECTION</h2>
+      </div>
+
+      <div class="grid-12" style="margin: auto 0; align-items: stretch;">
+        <!-- Left: Full Width Comparison Table (8 columns) -->
+        <div class="col-span-8 cyber-card" style="display: flex; flex-direction: column; justify-content: space-between; padding: 24px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 12px; margin-bottom: 16px; font-family: var(--font-mono); font-size: 11px;">
+              <span style="color: var(--cyan); font-weight: 700;">RIGOROUS 5-FOLD STRATIFIED CROSS-VALIDATION MATRIX</span>
+              <span style="color: var(--text-dim);">TEST PARTITION: 1,800 SAMPLES</span>
+            </div>
+
+            <table class="cyber-table">
+              <thead>
+                <tr>
+                  <th style="width: 28%;">Model Architecture</th>
+                  <th style="width: 24%;">5-Fold CV Acc</th>
+                  <th style="width: 16%;">Test Acc</th>
+                  <th style="width: 16%;">Test F1</th>
+                  <th style="width: 16%;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Rule-Based Heuristic</td>
+                  <td style="color: var(--text-dim);">—</td>
+                  <td>76.89%</td>
+                  <td>76.67%</td>
+                  <td><span class="badge" style="background: #1E293B; color: var(--text-muted);">Baseline</span></td>
+                </tr>
+                <tr>
+                  <td>Logistic Regression</td>
+                  <td>97.32% ± 0.30%</td>
+                  <td>96.28%</td>
+                  <td>96.28%</td>
+                  <td><span class="badge badge-purple">Linear</span></td>
+                </tr>
+                <tr>
+                  <td>Random Forest Classifier</td>
+                  <td>97.06% ± 0.47%</td>
+                  <td>96.89%</td>
+                  <td>96.89%</td>
+                  <td><span class="badge badge-cyan">Challenger</span></td>
+                </tr>
+                <tr class="champion-row">
+                  <td style="font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                    <span class="pulse-dot" style="background: var(--green);"></span>
+                    Gradient Boosting
+                  </td>
+                  <td style="color: var(--cyan); font-weight: 800;">98.19% ± 0.27%</td>
+                  <td style="font-size: 14px; font-weight: 900; color: var(--green);">98.33%</td>
+                  <td style="font-size: 14px; font-weight: 900; color: var(--green);">98.33%</td>
+                  <td><span class="badge badge-green">CHAMPION</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="background: var(--card-inner); border: 1px solid var(--card-border); padding: 12px 16px; border-radius: 10px; font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; margin-top: 16px;">
+            <strong style="color: var(--green);">Why Gradient Boosting Won:</strong> Highest out-of-fold generalization (98.19% CV) with the lowest variance (±0.27%) and peak test performance (98.33% accuracy & F1-score).
+          </div>
+        </div>
+
+        <!-- Right: Champion Metric Card (4 columns) -->
+        <div class="col-span-4 cyber-card glow-green" style="display: flex; flex-direction: column; justify-content: space-between; text-align: center; padding: 28px 20px;">
+          <div>
+            <span class="badge badge-green" style="margin-bottom: 16px;">🏆 OFFICIAL CHAMPION MODEL</span>
+
+            <div class="font-orbitron" style="font-size: 56px; font-weight: 900; line-height: 1; color: var(--green); text-shadow: 0 0 30px rgba(34, 197, 94, 0.4); margin: 12px 0;">
+              98.33%
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">
+              Test Accuracy & F1-Score
+            </div>
+          </div>
+
+          <div style="border-top: 1px solid var(--card-border); padding-top: 16px; text-align: left; font-family: var(--font-mono); font-size: 11px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="color: var(--text-dim); text-transform: uppercase; font-size: 10px;">Top Decision Drivers:</div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">recent_win_rate:</span>
+              <span style="color: var(--cyan); font-weight: 700;">17.89%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">consecutive_losses:</span>
+              <span style="color: var(--red); font-weight: 700;">17.04%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">accuracy:</span>
+              <span style="color: #A5B4FC; font-weight: 700;">12.51%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">recent_accuracy:</span>
+              <span style="color: var(--green); font-weight: 700;">11.75%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--card-border); padding-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-align: center;">
+        Gradient Boosting (gb-1.0.0) is actively served in production by the Python FastAPI microservice.
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 9: DYNAMIC DIFFICULTY CONTROLLER & GUARDRAILS -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="9">
+      <div>
+        <div class="slide-category">08 / SYSTEM STABILITY</div>
+        <h2 class="slide-title">THE 6 PRODUCTION GUARDRAILS</h2>
+      </div>
+
+      <div class="grid-3" style="margin: auto 0;">
+        <div class="cyber-card glow-cyan">
+          <div style="display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--cyan); margin-bottom: 8px;">
+            <span>🛡️</span> GUARDRAIL 1: BOUNDARY CLAMP
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Strictly confines difficulty between <strong style="color: var(--cyan);">Level 1 and Level 5</strong>. Level 5 cannot increase; Level 1 cannot decrease.
+          </p>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 10px;">1 ≤ difficulty ≤ 5</div>
+        </div>
+
+        <div class="cyber-card glow-purple">
+          <div style="display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: #A5B4FC; margin-bottom: 8px;">
+            <span>⚡</span> GUARDRAIL 2: MAX STEP LIMIT
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Restricts adjustments to maximum <strong style="color: #A5B4FC;">±1 level</strong> per change. Prevents abrupt jarring jumps like 2 → 5.
+          </p>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 10px;">MAX_DIFFICULTY_STEP = 1</div>
+        </div>
+
+        <div class="cyber-card glow-green">
+          <div style="display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--green); margin-bottom: 8px;">
+            <span>⏱️</span> GUARDRAIL 3: COOLDOWN WINDOW
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Enforces a <strong style="color: var(--green);">30-second</strong> refractory cooldown period between adjustments to allow player stabilization.
+          </p>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 10px;">DIFFICULTY_COOLDOWN_SECONDS = 30</div>
+        </div>
+
+        <div class="cyber-card" style="border-color: rgba(245, 158, 11, 0.4);">
+          <div style="display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--amber); margin-bottom: 8px;">
+            <span>📊</span> GUARDRAIL 4: MINIMUM SAMPLES
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Requires at least <strong style="color: var(--amber);">10 recorded gameplay actions</strong> before evaluating any dynamic adjustment.
+          </p>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 10px;">MIN_ACTIONS_FOR_ADJUSTMENT = 10</div>
+        </div>
+
+        <div class="cyber-card glow-red">
+          <div style="display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--red); margin-bottom: 8px;">
+            <span>🔄</span> GUARDRAIL 5: HYSTERESIS BUFFER
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Suppresses immediate oscillating demotions (3 → 4 → 3) unless performance degradation exceeds <strong style="color: var(--red);">15%</strong>.
+          </p>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 10px;">HYSTERESIS_THRESHOLD = 0.15</div>
+        </div>
+
+        <div class="cyber-card" style="border-color: rgba(99, 102, 241, 0.4);">
+          <div style="display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: #818CF8; margin-bottom: 8px;">
+            <span>🎯</span> GUARDRAIL 6: CONFIDENCE FILTER
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Rejects model predictions with probability below <strong style="color: #818CF8;">65%</strong> (CONFIDENCE_THRESHOLD = 0.65).
+          </p>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 10px;">Explicit Reason: LOW_CONFIDENCE</div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--card-border); padding-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-align: center;">
+        Unit tested across 7 Jest scenarios in <span style="color: var(--cyan);">difficulty_guardrails.test.ts</span> with 100% pass rate.
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 10: WEBSOCKET ARCHITECTURE -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="10">
+      <div>
+        <div class="slide-category">09 / REAL-TIME SYNCHRONIZATION</div>
+        <h2 class="slide-title">WEBSOCKET ARCHITECTURE: ZERO REFRESH</h2>
+      </div>
+
+      <div class="grid-12" style="margin: auto 0; align-items: center;">
+        <div class="col-span-8 cyber-card">
+          <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 10px; margin-bottom: 14px; font-family: var(--font-mono); font-size: 11px;">
+            <span style="color: #A5B4FC; font-weight: 700;">SUB-50MS EVENT PROPAGATION FLOW</span>
+            <span class="badge badge-purple">SOCKET.IO ROOMS</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; font-family: var(--font-mono); font-size: 11px;">
+            <div style="display: flex; gap: 12px; background: var(--card-inner); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+              <span class="badge badge-cyan" style="height: fit-content;">1</span>
+              <div>
+                <strong style="color: #fff; display: block;">Event Ingestion:</strong>
+                <span style="color: var(--text-muted);">Player hits or misses target; client posts event payload to Express <code>/api/game/event</code>.</span>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; background: var(--card-inner); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+              <span class="badge badge-purple" style="height: fit-content;">2</span>
+              <div>
+                <strong style="color: #fff; display: block;">ML Inference & Guardrail Audit:</strong>
+                <span style="color: var(--text-muted);">API builds 14-feature vector, queries FastAPI <code>/predict</code>, and validates 6 guardrails.</span>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; background: var(--card-inner); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+              <span class="badge badge-amber" style="height: fit-content;">3</span>
+              <div>
+                <strong style="color: #fff; display: block;">Targeted WebSocket Broadcast:</strong>
+                <span style="color: var(--text-muted);">Socket.IO emits event <code>DIFFICULTY_UPDATED</code> to authenticated room <code>player:&lt;playerId&gt;</code>.</span>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; background: var(--card-inner); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+              <span class="badge badge-green" style="height: fit-content;">4</span>
+              <div>
+                <strong style="color: #fff; display: block;">Immediate Canvas Adaptation:</strong>
+                <span style="color: var(--text-muted);">Game HUD displays promotion modal; target speeds & spawn timers adjust smoothly without reload.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-4 cyber-card glow-cyan" style="text-align: center; padding: 32px 20px;">
+          <div style="font-size: 42px; margin-bottom: 8px;">⚡</div>
+          <h3 class="font-orbitron" style="font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 8px;">ZERO PAGE REFRESH</h3>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;">
+            Traditional web games interrupt gameplay with page reloads or loading spinners. This system delivers seamless in-game level transitions.
+          </p>
+
+          <div style="background: var(--card-inner); border: 1px solid rgba(34, 211, 238, 0.3); border-radius: 8px; padding: 12px; font-family: var(--font-mono); font-size: 11px; text-align: left; display: flex; flex-direction: column; gap: 6px;">
+            <div style="color: var(--cyan); font-weight: 700;">Key Advantages:</div>
+            <div style="color: #CBD5E1;">• Unbroken player flow channel</div>
+            <div style="color: #CBD5E1;">• Zero state or score reset</div>
+            <div style="color: #CBD5E1;">• Sub-50ms sync latency</div>
+            <div style="color: #CBD5E1;">• Secure isolated player rooms</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--card-border); padding-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-align: center;">
+        Guarantees that difficulty transitions support rather than disrupt the psychological flow state.
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 11: APPLICATION DASHBOARDS -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="11">
+      <div>
+        <div class="slide-category">10 / USER INTERFACE & TELEMETRY</div>
+        <h2 class="slide-title">APPLICATION SCREENS & DASHBOARDS</h2>
+      </div>
+
+      <div class="grid-3" style="margin: auto 0;">
+        <div class="cyber-card glow-cyan" style="min-height: 400px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+              <span class="badge badge-cyan">GAME ARENA</span>
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);">/game</span>
+            </div>
+            <h3 class="font-orbitron" style="font-size: 15px; color: #fff; margin-bottom: 8px;">Target Survival Simulator</h3>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px;">
+              Real-time canvas arena with responsive coordinate scaling and interactive reticle HUD.
+            </p>
+            <ul style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.8; list-style: none;">
+              <li>• Real-time core shield bar (100 HP)</li>
+              <li>• Live accuracy & score telemetry</li>
+              <li>• In-game promotion banner modal</li>
+              <li>• Precision Euclidean hit testing</li>
+            </ul>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--cyan);">
+            Next.js Canvas Component
+          </div>
+        </div>
+
+        <div class="cyber-card glow-purple" style="min-height: 400px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+              <span class="badge badge-purple">PLAYER HUB</span>
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);">/dashboard</span>
+            </div>
+            <h3 class="font-orbitron" style="font-size: 15px; color: #fff; margin-bottom: 8px;">Self-Reflection & Alignment</h3>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px;">
+              Player dashboard featuring explainable ML metrics and skill-band comparisons.
+            </p>
+            <ul style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.8; list-style: none;">
+              <li>• Skill-Band Alignment card</li>
+              <li>• 'Why did difficulty change?' panel</li>
+              <li>• Recharts win rate & score history</li>
+              <li>• Recent match breakdown & streaks</li>
+            </ul>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 11px; color: #A5B4FC;">
+            Explainable AI (XAI)
+          </div>
+        </div>
+
+        <div class="cyber-card glow-green" style="min-height: 400px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+              <span class="badge badge-green">ADMIN OPS</span>
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);">/admin/model</span>
+            </div>
+            <h3 class="font-orbitron" style="font-size: 15px; color: #fff; margin-bottom: 8px;">Machine Learning Console</h3>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px;">
+              Real-time model operations, confusion matrices, and microservice latency monitoring.
+            </p>
+            <ul style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.8; list-style: none;">
+              <li>• Live champion hot-switching</li>
+              <li>• 5-Fold cross-validation metrics</li>
+              <li>• Express & FastAPI latency checks</li>
+              <li>• Complete difficulty audit ledger</li>
+            </ul>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--green);">
+            MLOps & System Health
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--card-border); padding-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-align: center;">
+        Demo credentials: <span style="color: var(--cyan); font-weight: 700;">player1@gameai.io</span> (Player) & <span style="color: var(--purple); font-weight: 700;">admin@gameai.io</span> (Admin)
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 12: CONCLUSION & FUTURE SCOPE -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="12">
+      <div>
+        <div class="slide-category">11 / SYNTHESIS & FUTURE WORK</div>
+        <h2 class="slide-title">CONCLUSION & FUTURE ROADMAP</h2>
+      </div>
+
+      <div class="grid-2" style="margin: auto 0;">
+        <div class="cyber-card glow-cyan" style="min-height: 400px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <span class="badge badge-cyan" style="margin-bottom: 12px;">SYSTEM ACHIEVEMENTS</span>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-size: 12px; color: #CBD5E1;">
+              <div style="background: var(--card-inner); padding: 12px; border-radius: 8px; border: 1px solid var(--card-border);">
+                <strong style="color: #fff; display: block; margin-bottom: 4px;">From Static Difficulty to Adaptive Gameplay:</strong>
+                Replaced hardcoded difficulty tiers with an autonomous 14-feature rate-of-change controller.
+              </div>
+              <div style="background: var(--card-inner); padding: 12px; border-radius: 8px; border: 1px solid var(--card-border);">
+                <strong style="color: #fff; display: block; margin-bottom: 4px;">High Generalization:</strong>
+                Gradient Boosting achieved 98.33% test accuracy and 98.19% ± 0.27% across 5-fold cross-validation.
+              </div>
+              <div style="background: var(--card-inner); padding: 12px; border-radius: 8px; border: 1px solid var(--card-border);">
+                <strong style="color: #fff; display: block; margin-bottom: 4px;">Production Reliability:</strong>
+                6 guardrails prevent volatility; sub-50ms WebSockets enable zero-refresh game updates.
+              </div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--cyan);">
+            Monorepo Architecture Verified & Tested
+          </div>
+        </div>
+
+        <div class="cyber-card glow-purple" style="min-height: 400px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <span class="badge badge-purple" style="margin-bottom: 12px;">4-PHASE FUTURE ROADMAP</span>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); font-size: 11px;">
+              <div style="background: var(--card-inner); padding: 10px; border-radius: 8px; border: 1px solid var(--card-border);">
+                <strong style="color: var(--cyan); display: block;">PHASE 1: Real-Player Playtest Telemetry</strong>
+                <span style="color: var(--text-muted); font-size: 10px;">Collect empirical human gameplay data to validate synthetic model performance.</span>
+              </div>
+              <div style="background: var(--card-inner); padding: 10px; border-radius: 8px; border: 1px solid var(--card-border);">
+                <strong style="color: #A5B4FC; display: block;">PHASE 2: Online Reinforcement Learning (RL)</strong>
+                <span style="color: var(--text-muted); font-size: 10px;">Upgrade from 3-class classification to continuous PPO / SAC policy controllers.</span>
+              </div>
+              <div style="background: var(--card-inner); padding: 10px; border-radius: 8px; border: 1px solid var(--card-border);">
+                <strong style="color: var(--green); display: block;">PHASE 3: Unity / Unreal Engine SDKs</strong>
+                <span style="color: var(--text-muted); font-size: 10px;">Build native C# and C++ client plugins for AAA and indie commercial engines.</span>
+              </div>
+              <div style="background: var(--card-inner); padding: 10px; border-radius: 8px; border: 1px solid var(--card-border);">
+                <strong style="color: var(--amber); display: block;">PHASE 4: Multiplayer Matchmaking DDA</strong>
+                <span style="color: var(--text-muted); font-size: 10px;">Scale adaptive difficulty to cooperative team and PvP competitive balancing.</span>
+              </div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 11px; color: #A5B4FC;">
+            Long-Term Commercial Vision
+          </div>
+        </div>
+      </div>
+
+      <div class="cyber-card" style="padding: 14px; text-align: center; font-family: var(--font-heading); font-size: 14px; color: #fff;">
+        THANK YOU! OPEN FOR QUESTIONS & DEMONSTRATION 🎮
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 13 (BACKUP 1): VERIFICATION & CRITERIA -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="13">
+      <div>
+        <div class="slide-category" style="color: var(--amber);">APPENDIX 01 / VERIFICATION</div>
+        <h2 class="slide-title">ACCEPTANCE CRITERIA & TEST SUITE</h2>
+      </div>
+
+      <div class="grid-3" style="margin: auto 0;">
+        <div class="cyber-card glow-green" style="text-align: center; padding: 24px;">
+          <div class="font-orbitron" style="font-size: 48px; font-weight: 900; color: var(--green); margin-bottom: 8px;">15 / 15</div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase;">ACCEPTANCE CRITERIA VERIFIED</div>
+          <p style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; margin-top: 8px;">100% of specification requirements met.</p>
+        </div>
+
+        <div class="cyber-card glow-cyan" style="text-align: center; padding: 24px;">
+          <div class="font-orbitron" style="font-size: 48px; font-weight: 900; color: var(--cyan); margin-bottom: 8px;">28 / 28</div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase;">AUTOMATED TESTS PASSING</div>
+          <p style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; margin-top: 8px;">22 Jest tests + 6 Python ML tests.</p>
+        </div>
+
+        <div class="cyber-card glow-purple" style="text-align: center; padding: 24px;">
+          <div class="font-orbitron" style="font-size: 48px; font-weight: 900; color: #A5B4FC; margin-bottom: 8px;">&lt; 15 ms</div>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-transform: uppercase;">MICROSERVICE LATENCY</div>
+          <p style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; margin-top: 8px;">FastAPI inference + DB round-trip.</p>
+        </div>
+      </div>
+
+      <div class="cyber-card" style="padding: 16px 20px;">
+        <div style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--cyan); margin-bottom: 10px;">
+          VERIFIED SPECIFICATION MATRIX (AC-01 TO AC-15)
+        </div>
+        <div class="grid-3" style="font-family: var(--font-mono); font-size: 10px; color: #CBD5E1; gap: 8px;">
+          <div>✅ AC-01: JWT Auth & Registration</div>
+          <div>✅ AC-06: ML 3-Class Inference</div>
+          <div>✅ AC-11: Recharts Real DB Curves</div>
+          <div>✅ AC-02: Game Session Creation</div>
+          <div>✅ AC-07: 6 Guardrails Enforced</div>
+          <div>✅ AC-12: Admin Model Management</div>
+          <div>✅ AC-03: Real-Time Event Stream</div>
+          <div>✅ AC-08: In-Game Difficulty Changes</div>
+          <div>✅ AC-13: Zod Schema Error Shield</div>
+          <div>✅ AC-04: Automated 14-Feature Calc</div>
+          <div>✅ AC-09: Socket.IO Zero-Refresh HUD</div>
+          <div>✅ AC-14: Canvas Viewport Scaling Fix</div>
+          <div>✅ AC-05: Real Vector to FastAPI</div>
+          <div>✅ AC-10: Persistent Audit History</div>
+          <div>✅ AC-15: Monorepo Test Suites Pass</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 14 (BACKUP 2): FEATURE IMPORTANCE & SKILL BANDS -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="14">
+      <div>
+        <div class="slide-category" style="color: var(--amber);">APPENDIX 02 / EXPLAINABILITY</div>
+        <h2 class="slide-title">FEATURE IMPORTANCE & SKILL BANDS</h2>
+      </div>
+
+      <div class="grid-2" style="margin: auto 0;">
+        <div class="cyber-card glow-purple" style="min-height: 400px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <h3 class="font-orbitron" style="font-size: 14px; color: #A5B4FC; margin-bottom: 16px;">TREE-BASED FEATURE IMPORTANCE</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px; font-family: var(--font-mono); font-size: 11px;">
+              <div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span>recent_win_rate (Last 3 Games):</span>
+                  <span style="color: var(--cyan); font-weight: 700;">17.89%</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: #1E293B; border-radius: 999px;">
+                  <div style="width: 17.89%; height: 100%; background: var(--cyan); border-radius: 999px;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span>consecutive_losses (Frustration):</span>
+                  <span style="color: var(--red); font-weight: 700;">17.04%</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: #1E293B; border-radius: 999px;">
+                  <div style="width: 17.04%; height: 100%; background: var(--red); border-radius: 999px;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span>accuracy (Lifetime Aim Precision):</span>
+                  <span style="color: #A5B4FC; font-weight: 700;">12.51%</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: #1E293B; border-radius: 999px;">
+                  <div style="width: 12.51%; height: 100%; background: #A5B4FC; border-radius: 999px;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span>recent_accuracy (Current Match Aim):</span>
+                  <span style="color: var(--green); font-weight: 700;">11.75%</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: #1E293B; border-radius: 999px;">
+                  <div style="width: 11.75%; height: 100%; background: var(--green); border-radius: 999px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">
+            Primary drivers of real-time rate transitions
+          </div>
+        </div>
+
+        <div class="cyber-card glow-cyan" style="min-height: 400px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <h3 class="font-orbitron" style="font-size: 14px; color: var(--cyan); margin-bottom: 16px;">TARGET SKILL-BAND ALIGNMENT MATRIX</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); font-size: 11px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-inner); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
+                <div><strong style="color: #fff;">Level 1 (Novice):</strong> <span style="color: var(--text-dim); display: block; font-size: 10px;">Speed: 60 px/s, Duration: 3.5s</span></div>
+                <span class="badge badge-green">30%–50% Acc</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-inner); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
+                <div><strong style="color: #fff;">Level 2 (Apprentice):</strong> <span style="color: var(--text-dim); display: block; font-size: 10px;">Speed: 100 px/s, Duration: 2.8s</span></div>
+                <span class="badge badge-cyan">45%–65% Acc</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-inner); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
+                <div><strong style="color: #fff;">Level 3 (Competent):</strong> <span style="color: var(--text-dim); display: block; font-size: 10px;">Speed: 150 px/s, Duration: 2.2s</span></div>
+                <span class="badge badge-purple">60%–75% Acc</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-inner); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
+                <div><strong style="color: #fff;">Level 4 (Skilled):</strong> <span style="color: var(--text-dim); display: block; font-size: 10px;">Speed: 200 px/s, Duration: 1.6s</span></div>
+                <span class="badge badge-amber">70%–85% Acc</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-inner); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
+                <div><strong style="color: #fff;">Level 5 (Master):</strong> <span style="color: var(--text-dim); display: block; font-size: 10px;">Speed: 260 px/s, Duration: 1.2s</span></div>
+                <span class="badge badge-red">80%–95% Acc</span>
+              </div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid var(--card-border); padding-top: 10px; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">
+            Empirical baseline for player promotion/demotion
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--card-border); padding-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-align: center;">
+        Provides empirical interpretability for why the system promotes or demotes a player.
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SLIDE 15 (BACKUP 3): DATABASE SCHEMA & RELATIONS -->
+    <!-- ========================================== -->
+    <section class="slide" data-slide="15">
+      <div>
+        <div class="slide-category" style="color: var(--amber);">APPENDIX 03 / DATA ARCHITECTURE</div>
+        <h2 class="slide-title">PRISMA ORM ENTITY-RELATIONSHIP SCHEMA</h2>
+      </div>
+
+      <div class="grid-4" style="margin: auto 0;">
+        <div class="cyber-card">
+          <span class="badge badge-cyan" style="margin-bottom: 8px;">User & Profile</span>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.6; margin-top: 6px;">
+            <strong style="color: #fff;">• User</strong><br>
+            id, email, passwordHash, role<br><br>
+            <strong style="color: #fff;">• PlayerProfile</strong><br>
+            currentDifficulty (1–5)<br>
+            lifetimeAccuracy, winRate<br>
+            totalGames, highScore
+          </div>
+        </div>
+
+        <div class="cyber-card">
+          <span class="badge badge-purple" style="margin-bottom: 8px;">GameSession</span>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.6; margin-top: 6px;">
+            <strong style="color: #fff;">• GameSession</strong><br>
+            id, playerId (FK)<br>
+            difficultyLevel (1–5)<br>
+            score, targetsHit<br>
+            targetsMissed, duration<br>
+            isCompleted, winStatus
+          </div>
+        </div>
+
+        <div class="cyber-card">
+          <span class="badge badge-green" style="margin-bottom: 8px;">GameplayEvent</span>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.6; margin-top: 6px;">
+            <strong style="color: #fff;">• GameplayEvent</strong><br>
+            id, sessionId (FK)<br>
+            eventType (HIT, MISS)<br>
+            reactionTimeMs<br>
+            scoreDelta, clickX, clickY<br>
+            targetDistance, timestamp
+          </div>
+        </div>
+
+        <div class="cyber-card">
+          <span class="badge badge-amber" style="margin-bottom: 8px;">Audit & Snapshots</span>
+          <div style="font-family: var(--font-mono); font-size: 11px; color: #CBD5E1; line-height: 1.6; margin-top: 6px;">
+            <strong style="color: #fff;">• DifficultyChange</strong><br>
+            playerId, oldLevel, newLevel<br>
+            confidence, reason, time<br><br>
+            <strong style="color: #fff;">• DailySnapshot</strong><br>
+            playerId, date, accuracy<br>
+            winRate, performanceTrend
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--card-border); padding-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-align: center;">
+        Relational constraints prevent orphaned events; indexing on (playerId, timestamp) optimizes sub-5ms query times.
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- SPEAKER NOTES DRAWER -->
+  <!-- ========================================== -->
+  <aside id="speakerNotesDrawer">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 16px;">🎙️</span>
+        <span class="font-orbitron" style="font-size: 12px; font-weight: 700; color: var(--amber);">PRESENTER TALKING POINTS & TIMING GUIDE</span>
+        <span id="slideTimeBudget" class="badge" style="background: #1E293B; color: #CBD5E1;">Target: 30 sec</span>
+      </div>
+      <button onclick="toggleNotes()" class="btn" style="padding: 2px 8px; font-size: 10px;">✕ CLOSE</button>
+    </div>
+
+    <div id="notesContent" style="font-family: var(--font-mono); font-size: 12px; color: #CBD5E1; line-height: 1.6; overflow-y: auto; padding-right: 12px; margin: 8px 0;">
+      <!-- Populated dynamically via JS -->
+    </div>
+
+    <div style="border-top: 1px solid var(--card-border); padding-top: 6px; display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">
+      <span>Tip: Speak naturally, focus on the closed-loop feedback and 98.33% model accuracy.</span>
+      <span>Press [N] to toggle notes anytime</span>
+    </div>
+  </aside>
+
+  <!-- CONTROLLER SCRIPT -->
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 15;
+    let notesVisible = false;
+
+    const speakerNotes = {
+      1: {
+        time: "30 seconds",
+        notes: "Good morning respected evaluators and panel members. Today we present our capstone project: 'Game Difficulty Auto-Balancing System' — an autonomous, closed-loop gaming platform that uses real-time telemetry, 14 engineered metrics, and an active Gradient Boosting champion classifier to dynamically balance game difficulty between Levels 1 and 5 without interrupting gameplay."
+      },
+      2: {
+        time: "45 seconds",
+        notes: "Let us start with the core problem: Fixed game difficulty. Traditional video games offer static modes: Easy, Medium, or Hard. If the game is too easy, skilled players experience boredom and churn. If it is too hard or spikes abruptly, players experience frustration and rage quit. The goal of dynamic difficulty adjustment is to keep players perpetually inside the 'Flow Channel' — where their mechanical skill perfectly matches the challenge."
+      },
+      3: {
+        time: "45 seconds",
+        notes: "To solve this, our project delivers five engineering pillars: 1) Sub-millisecond telemetry streaming from an HTML5 canvas arena, 2) An automated 14-feature engine capturing both lifetime skill and short-term 3-game momentum, 3) An ML rate controller predicting step changes {-1, 0, +1}, 4) Six production guardrails to prevent erratic oscillations, and 5) Zero-refresh WebSocket synchronization."
+      },
+      4: {
+        time: "1 minute",
+        notes: "Here is the closed-loop adaptation cycle: The player clicks in the arena; the canvas emits HTTP telemetry events; the Express performance engine computes the 14-feature vector; FastAPI runs ML inference; the guardrail controller verifies boundaries, step size, cooldown, and 65% confidence; and finally, Socket.IO updates the active arena HUD in under 50 milliseconds."
+      },
+      5: {
+        time: "1 minute",
+        notes: "This is our production microservices architecture. Notice the clean separation of concerns: The client tier uses Next.js 14 and HTML5 Canvas. The API tier uses Express and Prisma ORM. The ML tier uses Python FastAPI and Scikit-Learn. Everything communicates over low-latency REST and WebSockets. Database round-trips take under 10ms, and ML predictions take under 15ms."
+      },
+      6: {
+        time: "1 minute",
+        notes: "Here is our actual Target Survival Arena. A critical engineering milestone in v1.1 was resolving the viewport coordinate-mapping bug. Because CSS scales canvas display sizes, raw client coordinates caused a 150px rightward click offset. We engineered an exact scaleX and scaleY transformation that maps mouse clicks directly to the internal 900x520 space, verified across 7 automated unit tests."
+      },
+      7: {
+        time: "1 minute",
+        notes: "For machine learning, we formulated difficulty modulation not as predicting an absolute level, but as a 3-class rate-of-change controller: -1 to decrease, 0 to maintain, and +1 to increase. We synthesized 12,000 gameplay records across novice, intermediate, and expert archetypes with a fixed random seed. The class distribution is well balanced: 25% decrease, 43% maintain, and 32% increase."
+      },
+      8: {
+        time: "1.5 minutes",
+        notes: "This is one of our most important technical slides: Model Comparison. We evaluated four algorithms using 5-Fold Stratified Cross-Validation. The Rule-based baseline scored 76.89%. Logistic Regression scored 96.28%. Random Forest scored 96.89%. But Gradient Boosting Classifier achieved 98.33% test accuracy and 98.19% ± 0.27% cross-validation accuracy, making it our official Champion Model."
+      },
+      9: {
+        time: "1 minute",
+        notes: "Machine learning predictions alone are dangerous in games without deterministic guardrails. We implemented 6 production rules: 1) Boundary clamp between 1 and 5, 2) Max step limit of ±1 level, 3) 30-second cooldown window, 4) Minimum 10 actions before evaluation, 5) 15% hysteresis buffer to stop ping-pong demotions, and 6) A 65% confidence threshold."
+      },
+      10: {
+        time: "45 seconds",
+        notes: "Look at our WebSocket architecture. In traditional web games, a difficulty adjustment requires reloading the page or pausing with a spinner. With Socket.IO, we emit a DIFFICULTY_UPDATED payload to the player's private room. The canvas interpolates the target speeds and spawn intervals on the fly with zero page refreshes."
+      },
+      11: {
+        time: "45 seconds",
+        notes: "Our user interface is split into three consoles: 1) The interactive Target Survival Arena with real-time HUD and reticle crosshair, 2) The Player Analytics Dashboard featuring explainable AI ('Why did my difficulty change?') and Target Skill-Band Alignment, and 3) The Administrator ML Ops Console with live confusion matrices, latency telemetry, and hot model switching."
+      },
+      12: {
+        time: "45 seconds",
+        notes: "In conclusion, we have built and verified a complete, working closed-loop difficulty auto-balancing engine with 98.33% accuracy and 6 stability guardrails. Our future roadmap includes logging real human playtest sessions, exploring continuous Reinforcement Learning with PPO, and packaging C#/C++ SDKs for Unity and Unreal Engine. Thank you, and we are ready for your questions and live demo!"
+      },
+      13: {
+        time: "Q&A Backup",
+        notes: "Backup Slide 1: If evaluators ask about testing or verification, highlight that all 15 Acceptance Criteria from the specification are verified and passing, along with 22 Jest API integration tests and 6 Python ML unit tests (100% pass rate)."
+      },
+      14: {
+        time: "Q&A Backup",
+        notes: "Backup Slide 2: If evaluators ask about Explainability or Feature Importance, highlight that recent_win_rate (17.89%) and consecutive_losses (17.04%) are the primary drivers of promotions and demotions, matched to the Target Skill-Band matrix."
+      },
+      15: {
+        time: "Q&A Backup",
+        notes: "Backup Slide 3: If evaluators ask about database architecture or schema normalization, walk through the 6 Prisma entities: User, PlayerProfile, GameSession, GameplayEvent, DifficultyChange, and DailyPerformanceSnapshot."
+      }
+    };
+
+    function updateSlide() {
+      document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+      const activeEl = document.querySelector(`.slide[data-slide="${currentSlide}"]`);
+      if (activeEl) activeEl.classList.add('active');
+
+      document.getElementById('currentSlideNum').textContent = currentSlide;
+      document.getElementById('totalSlidesNum').textContent = totalSlides;
+      const progressPct = (currentSlide / totalSlides) * 100;
+      document.getElementById('progressBar').style.width = `${progressPct}%`;
+
+      const noteData = speakerNotes[currentSlide] || { time: "N/A", notes: "No speaker notes recorded for this slide." };
+      document.getElementById('slideTimeBudget').textContent = `Target: ${noteData.time}`;
+      document.getElementById('notesContent').textContent = noteData.notes;
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) {
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    function toggleNotes() {
+      notesVisible = !notesVisible;
+      const drawer = document.getElementById('speakerNotesDrawer');
+      const status = document.getElementById('notesStatus');
+      if (notesVisible) {
+        drawer.classList.add('active');
+        status.textContent = "ON";
+      } else {
+        drawer.classList.remove('active');
+        status.textContent = "OFF";
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.warn(`Fullscreen error: ${err.message}`);
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      } else if (e.key === 'n' || e.key === 'N') {
+        toggleNotes();
+      } else if (e.key === 'Home') {
+        currentSlide = 1;
+        updateSlide();
+      } else if (e.key === 'End') {
+        currentSlide = totalSlides;
+        updateSlide();
+      }
+    });
+
+    updateSlide();
+  </script>
+</body>
+</html>
