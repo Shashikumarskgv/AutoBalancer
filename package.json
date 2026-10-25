@@ -7,11 +7,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\" \"npm run dev:ml\"",
+    "start": "npm run dev",
+    "dev": "concurrently -k -p \"[{name}]\" -n \"API,WEB,ML\" -c \"cyan.bold,blue.bold,yellow.bold\" \"npm run dev:api\" \"npm run dev:web\" \"npm run dev:ml\"",
     "dev:api": "npm run dev --workspace=@game-ai/api",
     "dev:web": "npm run dev --workspace=@game-ai/web",
     "dev:ml": "python services/ml-service/app/main.py",
-    "build": "npm run build --workspace=@game-ai/shared-types && npm run build --workspace=@game-ai/api && npm run build --workspace=@game-ai/web",
+    "build": "npm run build --workspace=@game-ai/shared-types && npm run build --workspace=@game-ai/validation && npm run build --workspace=@game-ai/api && npm run build --workspace=@game-ai/web",
     "test": "npm run test --workspaces --if-present",
     "test:ml": "python -m unittest discover -s ml/tests -p \"test_*.py\"",
     "ml:generate-data": "python ml/datasets/generate_dataset.py",
